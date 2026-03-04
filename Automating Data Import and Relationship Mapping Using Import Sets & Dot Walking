@@ -1,0 +1,41 @@
+(function runTransformScript(source, target, map, log, isUpdate) {
+
+    // Check if user already exists
+    var userGR = new GlideRecord('sys_user');
+    userGR.addQuery('email', source.u_email);
+    userGR.query();
+
+    if (userGR.next()) {
+        // Update existing user
+        userGR.first_name = source.u_first_name;
+        userGR.last_name  = source.u_last_name;
+        userGR.update();
+        log.info("User Updated: " + userGR.name);
+    } else {
+        // Insert new user
+        var newUser = new GlideRecord('sys_user');
+        newUser.initialize();
+        newUser.first_name = source.u_first_name;
+        newUser.last_name  = source.u_last_name;
+        newUser.email      = source.u_email;
+
+        // 🔹 Reference Mapping (Relationship)
+        var deptGR = new GlideRecord('cmn_department');
+        deptGR.addQuery('name', source.u_department);
+        deptGR.query();
+        if (deptGR.next()) {
+            newUser.department = deptGR.sys_id;
+        }
+
+        var locGR = new GlideRecord('cmn_location');
+        locGR.addQuery('name', source.u_location);
+        locGR.query();
+        if (locGR.next()) {
+            newUser.location = locGR.sys_id;
+        }
+
+        newUser.insert();
+        log.info("New User Inserted: " + newUser.name);
+    }
+
+})(source, target, map, log, isUpdate);
